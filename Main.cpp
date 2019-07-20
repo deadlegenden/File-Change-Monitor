@@ -2,8 +2,7 @@
 #include <iostream>
 #include <Windows.h>
 #include <string>
-#include <thread>
-#include <chrono>
+#include <time.h>
 #define PROGRAM_NAME "File Change Monitor"
 #define MAX_PATH 1024
 std::string getCurDir()
@@ -44,29 +43,20 @@ int fileWatcher(std::string dir)
 	{
 		if (ReadDirectoryChangesW(dirHandle,&notify, MAX_PATH,true,FILE_NOTIFY_CHANGE_FILE_NAME| FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_DIR_NAME,&cbBytes,NULL,NULL))//чтение изменений
 		{
-			//wide char to char преобразование 
-			if (pnotify->FileName)
+			if (pnotify->FileName){memset(fileName, 0, strlen(fileName));WideCharToMultiByte(CP_ACP, 0, pnotify->FileName, pnotify->FileNameLength / 2, fileName, 99, NULL, NULL);}
+			if (pnotify->NextEntryOffset != 0 && (pnotify->FileNameLength > 0 && pnotify->FileNameLength < MAX_PATH)){PFILE_NOTIFY_INFORMATION p = (PFILE_NOTIFY_INFORMATION)((char*)pnotify + pnotify->NextEntryOffset);memset(fileNameNew, 0, sizeof(fileNameNew));WideCharToMultiByte(CP_ACP, 0, p->FileName, p->FileNameLength / 2, fileNameNew, 99, NULL, NULL);}
+			switch (pnotify->Action)
 			{
-				memset(fileName, 0, strlen(fileName));
-				WideCharToMultiByte(CP_ACP, 0, pnotify->FileName, pnotify->FileNameLength / 2, fileName, 99, NULL, NULL);
-			}
-			if (pnotify->NextEntryOffset != 0 && (pnotify->FileNameLength > 0 && pnotify->FileNameLength < MAX_PATH))
-			{
-				PFILE_NOTIFY_INFORMATION p = (PFILE_NOTIFY_INFORMATION)((char*)pnotify + pnotify->NextEntryOffset);
-				memset(fileNameNew, 0, sizeof(fileNameNew));WideCharToMultiByte(CP_ACP, 0, p->FileName, p->FileNameLength / 2, fileNameNew, 99, NULL, NULL);
-			}
-			switch (pnotify->Action)//кейс мониторинга
-			{
-			case FILE_ACTION_ADDED://файл/папка добавлен
+			case FILE_ACTION_ADDED:
 				std::cout << getCurTime() << "File Added: '" << fileName << "'" << std::endl;
 				break;
-			case FILE_ACTION_MODIFIED://файл/папка модифицирован
+			case FILE_ACTION_MODIFIED:
 				std::cout << getCurTime() << "File Modified: '" << fileName << "'" << std::endl;
 				break;
-			case FILE_ACTION_REMOVED://файл/папка удалён
+			case FILE_ACTION_REMOVED:
 				std::cout << getCurTime() << "File Deleted: '" << fileName << "'" << std::endl;
 				break;
-			case FILE_ACTION_RENAMED_OLD_NAME://файл/папка переименован
+			case FILE_ACTION_RENAMED_OLD_NAME:
 				std::cout << getCurTime() << "File Renamed: '" << fileName << "' to '" << fileNameNew << "'" << std::endl;
 				break;
 			default:
@@ -76,12 +66,11 @@ int fileWatcher(std::string dir)
 	}
 	CloseHandle(dirHandle);
 }
-int main()//точка вода
+int main()
 {
-	setlocale(LC_ALL, "");//установка локали
-	SetConsoleTitleA(PROGRAM_NAME);//установка тайтла
-	//std::string dir = getCurDir() + "\\check";//получение текущей директории + нужная папка для мониторинга
-	fileWatcher("C:\\");//вызов функции мониторинга
-	system("pause");//пауза консоли
+	setlocale(LC_ALL, "");
+	SetConsoleTitleA(PROGRAM_NAME);
+	fileWatcher("C:\\");
+	system("pause");
 	return 0;
 }

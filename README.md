@@ -1,4 +1,3 @@
 # File-Change-Monitor
-simple create, delete, modification & renaming file/folder with recursion.
-76 code line, used only winapi
+Simple monitor of changes, deletions, creation, renaming, written only on winapi and 90<lines of code
 ![Screenshot](screenshot.png)
